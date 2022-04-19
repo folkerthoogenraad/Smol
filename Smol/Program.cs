@@ -5,11 +5,77 @@ using System.Linq;
 using System.IO;
 using Smol.Compiler;
 using System.Net;
+using System.Text.Json;
 
 namespace Smol
 {
     public class Program
     {
+        public static string ReadHighlightedString()
+        {
+            /*int index = Console.CursorLeft;
+
+            StringBuilder sb = new StringBuilder();
+
+            while (true)
+            {
+                var info = Console.ReadKey(true);
+
+                if(info.Key == ConsoleKey.Enter)
+                {
+                    return sb.ToString();
+                }
+                else if(info.Key == ConsoleKey.Backspace && sb.Length > 0)
+                {
+                    sb.Remove(sb.Length - 1, 1);
+
+                    Console.CursorVisible = false;
+                    Console.SetCursorPosition(Console.CursorLeft - 2, Console.CursorTop);
+                    Console.Write(" ");
+                    Console.SetCursorPosition(Console.CursorLeft - 2, Console.CursorTop);
+                    Console.CursorVisible = true;
+                }
+                else
+                {
+                    sb.Append(info.KeyChar);
+                    Console.Write(info.KeyChar);
+                }
+
+            }*/
+
+            return Console.ReadLine();
+        }
+
+        public static SmolValue JsonToSmol(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                return new SmolString(element.GetString());
+            }
+            else if (element.ValueKind == JsonValueKind.Object)
+            {
+                var obj = new SmolObject();
+
+                foreach(var val in element.EnumerateObject()){
+                    obj.Set(val.Name, JsonToSmol(val.Value));
+                }
+
+                return obj;
+            }
+            else if(element.ValueKind == JsonValueKind.Number)
+            {
+                return new SmolNumber(element.GetDouble());
+            }
+            else if(element.ValueKind == JsonValueKind.Array)
+            {
+                return new SmolArray(element.EnumerateArray().Select(x => JsonToSmol(x)).ToArray());
+            }
+            else
+            {
+                throw new Exception("Cannot convert json to smol");
+            }
+        }
+
         public static void Main(string[] args)
         {
             Runtime runtime = new Runtime();
@@ -157,9 +223,20 @@ namespace Smol
 
                 runtime.PushValue(File.ReadAllText(value));
             });
+            runtime.RegisterCommand("json_parse", (func, runtime) => {
+                var value = runtime.Pop().AsString();
 
-            runtime.RegisterCommand("asobject", (func, runtime) => {
-                
+                var document = JsonDocument.Parse(value);
+
+                runtime.PushValue(JsonToSmol(document.RootElement));
+            });
+            runtime.RegisterCommand("json_serialize", (func, runtime) => {
+                var value = runtime.Pop().AsObject();
+
+
+            });
+
+            runtime.RegisterCommand("this", (func, runtime) => {
                 SmolObject obj = new SmolObject();
 
                 foreach(var v in runtime.DeclaredVariables)
@@ -237,9 +314,9 @@ namespace Smol
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write("$ ");
-                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.ForegroundColor = ConsoleColor.White;
 
-                string line = Console.ReadLine();
+                string line = ReadHighlightedString();
 
                 Console.ForegroundColor = ConsoleColor.White;
 

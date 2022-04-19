@@ -259,7 +259,9 @@ namespace Smol.Compiler
         public bool IsCharacter(char c)
         {
             return (c >= 'a' && c <= 'z')
-                || (c >= 'A' && c <= 'Z');
+                || (c >= 'A' && c <= 'Z')
+                || c == '_'
+                || IsNumber(c);
         }
         public bool IsNumber(char c)
         {
