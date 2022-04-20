@@ -12,8 +12,10 @@ namespace Smol.Compiler
         {
             Identifier,
             Equals,
+
             Number,
             String,
+            Boolean,
 
             Param,
 

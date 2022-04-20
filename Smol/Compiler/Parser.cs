@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -78,12 +79,17 @@ namespace Smol.Compiler
             else if (current.Type == Token.TokenType.Number)
             {
                 _tokens.Next();
-                return new ConstSmolExpression(new SmolNumber(double.Parse(current.Data)));
+                return new ConstSmolExpression(new SmolNumber(double.Parse(current.Data, CultureInfo.InvariantCulture)));
             }
             else if (current.Type == Token.TokenType.String)
             {
                 _tokens.Next();
                 return new ConstSmolExpression(new SmolString(current.Data));
+            }
+            else if (current.Type == Token.TokenType.Boolean)
+            {
+                _tokens.Next();
+                return new ConstSmolExpression(new SmolBoolean(bool.Parse(current.Data)));
             }
             else if (current.Type == Token.TokenType.BracketOpen)
             {
@@ -172,9 +178,19 @@ namespace Smol.Compiler
                     return null;
                 }
 
-                _tokens.Next();
+                var lookupChain = new List<string>();
 
-                return new StoreSmolExpression(variable.Data);
+                lookupChain.Add(variable.Data);
+
+                var token = _tokens.Next();
+
+                while(_tokens.HasCurrent && token.Type == Token.TokenType.Lookup)
+                {
+                    lookupChain.Add(token.Data);
+                    token = _tokens.Next();
+                }
+
+                return new StoreSmolExpression(lookupChain.ToArray());
             }
             else
             {

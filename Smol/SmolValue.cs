@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ namespace Smol
     {
         String,
         Number,
+        Boolean,
 
         Object,
         Array,
@@ -26,6 +28,7 @@ namespace Smol
         public bool IsObject => Type == SmolType.Object;
         public bool IsArray => Type == SmolType.Array;
         public bool IsLambda => Type == SmolType.Lambda;
+        public bool IsBoolean => Type == SmolType.Boolean;
 
         public string AsString()
         {
@@ -57,6 +60,12 @@ namespace Smol
 
             throw new ArgumentException("Not an object");
         }
+        public bool AsBoolean()
+        {
+            if (this is SmolBoolean boo) return boo.Data;
+
+            throw new ArgumentException("Not a boolean");
+        }
 
         public virtual string ConvertString()
         {
@@ -82,6 +91,16 @@ namespace Smol
             Data = new Dictionary<string, SmolValue>();
         }
 
+        public bool Has(string name)
+        {
+            return Data.ContainsKey(name);
+        }
+
+        public void Clear()
+        {
+            Data.Clear();
+        }
+
         public SmolValue Get(string name)
         {
             return Data[name];
@@ -96,7 +115,7 @@ namespace Smol
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.Append("{");
+            sb.Append("(");
 
             foreach (var d in Data)
             {
@@ -106,7 +125,57 @@ namespace Smol
                 sb.Append(" ");
             }
 
-            sb.Append("}");
+            sb.Append("this)");
+
+            return sb.ToString();
+        }
+
+        // TODO this should just be a seperate class/module/whatever
+        private void AddIndentation(StringBuilder builder, int indentation)
+        {
+            while(indentation > 0)
+            {
+                builder.Append("  ");
+
+                indentation--;
+            }
+        }
+
+        private string ToFormattedString(int indentation, SmolValue value)
+        {
+
+            if (value.IsObject)
+            {
+                return value.AsObject().ToFormattedString(indentation);
+            }
+            else
+            {
+                StringBuilder builder = new StringBuilder();
+
+                AddIndentation(builder, indentation);
+                builder.Append(value.ToString());
+
+                return builder.ToString();
+            }
+
+        }
+
+        public string ToFormattedString(int indentation = 0) // TODO formatter settigns or something
+        {
+            StringBuilder sb = new StringBuilder();
+
+            AddIndentation(sb, indentation);
+            sb.AppendLine("( ");
+
+            foreach(var var in Data)
+            {
+                sb.Append(ToFormattedString(indentation + 1, var.Value));
+                sb.Append(" -> $");
+                sb.AppendLine(var.Key);
+            }
+
+            AddIndentation(sb, indentation);
+            sb.Append("this)");
 
             return sb.ToString();
         }
@@ -129,7 +198,16 @@ namespace Smol
         }
 
         public override SmolType Type => SmolType.Number;
-        public override string ToString() => $"{Data}";
+        public override string ToString() => FormattableString.Invariant($"{Data}");
+    }
+    public class SmolBoolean : SmolBase<bool>
+    {
+        public SmolBoolean(bool data) : base(data)
+        {
+        }
+
+        public override SmolType Type => SmolType.Boolean;
+        public override string ToString() => $"{Data.ToString().ToLower()}";
     }
     public class SmolString : SmolBase<string>
     {

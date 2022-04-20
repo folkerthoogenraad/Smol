@@ -42,27 +42,14 @@ namespace Smol
 
         public override void Execute(Runtime runtime)
         {
-            var values = new List<SmolValue>();
+            Runtime r = new Runtime(runtime);
 
             foreach (var expression in Expressions)
             {
-                Runtime r = new Runtime(runtime);
-
                 expression.Execute(r);
-
-                if (r.StackHeight() > 1) throw new ApplicationException("Inner block cannot have a stackheight of more than 1");
-
-                if (r.StackHeight() == 1)
-                {
-                    values.Add(r.PopValue());
-                }
-                else
-                {
-                    throw new ApplicationException("Array must have at least one stack.");
-                }
             }
 
-            runtime.PushValue(values.ToArray());
+            runtime.PushValue(r.Stack.Reverse().ToArray());
         }
 
         public override string ToString()
@@ -122,23 +109,40 @@ namespace Smol
     }
     public class StoreSmolExpression : SmolExpression
     {
-        public string Name { get; private set; }
+        public string[] LookupChain { get; private set; }
 
-        public StoreSmolExpression(string name)
+        public StoreSmolExpression(string[] lookupChain)
         {
-            Name = name;
+            LookupChain = lookupChain;
         }
 
         public override void Execute(Runtime runtime)
         {
             var value = runtime.PopValue();
 
-            runtime.SetVariable(Name, value);
+            var obj = runtime.This;
+
+            for (int i = 0; i < LookupChain.Length - 1; i++)
+            {
+                obj = obj.Get(LookupChain[i]).AsObject();
+            }
+
+            obj.Set(LookupChain.Last(), value);
         }
 
         public override string ToString()
         {
-            return $"${Name}";
+            StringBuilder builder = new StringBuilder();
+
+            builder.Append("-> $");
+            builder.Append(LookupChain[0]);
+            for(int i = 1; i < LookupChain.Length; i++)
+            {
+                builder.Append(" .");
+                builder.Append(LookupChain[i]);
+            }
+
+            return builder.ToString();
         }
     }
 
@@ -239,7 +243,7 @@ namespace Smol
             }
 
             // Create a seperate runtime for this
-            Runtime runtime = new Runtime(existingRuntime);
+            Runtime runtime = new Runtime(existingRuntime, existingRuntime.This);
 
             command.Execute(runtime);
 

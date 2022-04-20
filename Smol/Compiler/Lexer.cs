@@ -48,7 +48,7 @@ namespace Smol.Compiler
                     c = _characters.Next();
 
                     // Arrow
-                    if(c == '>')
+                    if (c == '>')
                     {
                         yield return new Token()
                         {
@@ -62,7 +62,7 @@ namespace Smol.Compiler
                     {
                         StringBuilder builder = new StringBuilder();
 
-                        while (_characters.HasCurrent && IsCharacter(c))
+                        while (_characters.HasCurrent && IsContinueCharacter(c))
                         {
                             builder.Append(c);
 
@@ -84,7 +84,7 @@ namespace Smol.Compiler
 
                     StringBuilder builder = new StringBuilder();
 
-                    while (_characters.HasCurrent && IsCharacter(c))
+                    while (_characters.HasCurrent && IsContinueCharacter(c))
                     {
                         builder.Append(c);
 
@@ -103,7 +103,7 @@ namespace Smol.Compiler
 
                     StringBuilder builder = new StringBuilder();
 
-                    while (_characters.HasCurrent && IsCharacter(c))
+                    while (_characters.HasCurrent && IsContinueCharacter(c))
                     {
                         builder.Append(c);
 
@@ -201,28 +201,55 @@ namespace Smol.Compiler
                 {
                     StringBuilder builder = new StringBuilder();
 
-                    while (_characters.HasCurrent && (IsCharacter(c) || IsNumber(c)))
+                    while (_characters.HasCurrent && IsContinueCharacter(c))
                     {
                         builder.Append(c);
 
                         c = _characters.Next();
                     }
 
-                    yield return new Token()
+                    var data = builder.ToString();
+
+                    if (data == "true" || data == "false")
                     {
-                        Type = Token.TokenType.Identifier,
-                        Data = builder.ToString()
-                    };
+                        yield return new Token()
+                        {
+                            Type = Token.TokenType.Boolean,
+                            Data = builder.ToString()
+                        };
+                    }
+                    else
+                    {
+                        yield return new Token()
+                        {
+                            Type = Token.TokenType.Identifier,
+                            Data = builder.ToString()
+                        };
+                    }
+
                 }
                 else if (IsNumber(c))
                 {
                     StringBuilder builder = new StringBuilder();
 
-                    while (_characters.HasCurrent && (IsNumber(c) || c == '.'))
+                    while (_characters.HasCurrent && IsNumber(c))
                     {
                         builder.Append(c);
 
                         c = _characters.Next();
+                    }
+
+                    if (c == '.')
+                    {
+                        builder.Append(c);
+                        c = _characters.Next();
+
+                        while (_characters.HasCurrent && IsNumber(c))
+                        {
+                            builder.Append(c);
+
+                            c = _characters.Next();
+                        }
                     }
 
                     yield return new Token()
@@ -232,9 +259,9 @@ namespace Smol.Compiler
                     };
                 }
                 // Comments!
-                else if(c == '#')
+                else if (c == '#')
                 {
-                    while(_characters.HasCurrent && c != '\n')
+                    while (_characters.HasCurrent && c != '\n')
                     {
                         c = _characters.Next();
                     }
@@ -260,7 +287,11 @@ namespace Smol.Compiler
         {
             return (c >= 'a' && c <= 'z')
                 || (c >= 'A' && c <= 'Z')
-                || c == '_'
+                || c == '_';
+        }
+        public bool IsContinueCharacter(char c)
+        {
+            return IsCharacter(c)
                 || IsNumber(c);
         }
         public bool IsNumber(char c)

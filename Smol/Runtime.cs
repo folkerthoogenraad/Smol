@@ -10,22 +10,30 @@ namespace Smol
     {
         public delegate void SmolProcessor(FunctionCallSmolExpression func, Runtime runtime);
 
-        private Runtime _parentRuntime;
+        private Runtime? _parentRuntime;
         private Stack<SmolValue> _stack;
 
         private Dictionary<string, SmolProcessor> _actions;
-        private Dictionary<string, SmolValue> _variables;
+        private SmolObject _this;
 
         public IEnumerable<SmolValue> Stack => _stack;
-        public IEnumerable<KeyValuePair<string, SmolValue>> DeclaredVariables => _variables;
+        public SmolObject This => _this;
 
-        public Runtime(Runtime parentRuntime = null)
+        public Runtime(Runtime? parentRuntime = null, SmolObject? _thisPointer = null)
         {
             _parentRuntime = parentRuntime;
 
             _stack = new Stack<SmolValue>();
             _actions = new Dictionary<string, SmolProcessor>();
-            _variables = new Dictionary<string, SmolValue>();
+
+            if(_thisPointer == null)
+            {
+                _this = new SmolObject();
+            }
+            else
+            {
+                _this = _thisPointer;
+            }
         }
 
         public void RegisterCommand(string command, SmolProcessor action)
@@ -42,13 +50,13 @@ namespace Smol
 
         public SmolValue? GetVariable(string name)
         {
-            if (_variables.TryGetValue(name, out SmolValue? value)) return value;
+            if (_this.Has(name)) return _this.Get(name);
 
             return _parentRuntime?.GetVariable(name);
         }
         public void SetVariable(string name, SmolValue value)
         {
-            _variables[name] = value;
+            _this.Set(name, value);
         }
 
         public SmolValue PopValue()
@@ -63,6 +71,10 @@ namespace Smol
         public void PushValue(double value)
         {
             _stack.Push(new SmolNumber(value));
+        }
+        public void PushValue(bool value)
+        {
+            _stack.Push(new SmolBoolean(value));
         }
         public void PushValue(SmolValue value)
         {
@@ -84,7 +96,7 @@ namespace Smol
         }
         public void ClearVariables()
         {
-            _variables.Clear();
+            _this.Clear();
         }
 
         public SmolValue Pop()
@@ -94,7 +106,12 @@ namespace Smol
 
         public SmolValue? ExecuteScoped(SmolExpression command, params SmolValue[] parameters)
         {
-            Runtime child = new Runtime(this);
+            return ExecuteScopedOn(command, null, parameters);
+        }
+
+        public SmolValue? ExecuteScopedOn(SmolExpression command, SmolObject? @this, params SmolValue[] parameters)
+        {
+            Runtime child = new Runtime(this, @this);
 
             // Setup the stack
             foreach(var value in parameters) child.PushValue(value);
