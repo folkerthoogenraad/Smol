@@ -72,33 +72,27 @@ We push the filename onto the stack, let the `file_read` function read the file 
 And you want to view all names that contain the letter `o`.
 
 ```smol
-$data .people {.name "o" contains} filter print
+$ $data .people {.name "o" contains} filter print
+
+[("Noah" -> $name 24 -> $age this) ("Charlotte" -> $name 44 -> $age this)]
 ```
 For this, we push `$data` to the stack, use the `.people` to lookup the people array. Then we declare a new lamda in the `{}` and push the lamda onto the stack. Then the `filter` function pops the lamda and the array from the stack and filters the array by executing the lamda on each element. 
 
-The output looks like:
-```smol
-[("Noah" -> $name 24 -> $age this) ("Charlotte" -> $name 44 -> $age this)]
-```
-That is ofcourse workable, but this might not be easy to see with multiple people. It would be nice if we can change the way it outputs.
+The output is ofcourse workable, but this might not be easy to see with a bigger list of people. It would be nice if we can change the way it outputs.
 
 For that we can use the `each` function. This executes a lamda for each element in an array. It creates a copy of the array with the processed data.
 
 ```smol
-$data .people {.name "o" contains} filter {.name} each print
-```
+$ $data .people {.name "o" contains} filter {.name} each print
 
-The output now looks like:
-```smol
 ["Noah" "Charlotte"]
 ```
+
 Thats a lot better, but we can do better. Using the `join` command we can join an array into one long string. The join function can take one extra parameter `-with`, a string that will be inserted between each element. In this case we use the `\n` as newline.
 
 ```smol
-$data .people {.name "o" contains} filter {.name} each join -with "\n" print
-```
-This outputs: 
-```smol
+$ $data .people {.name "o" contains} filter {.name} each join -with "\n" print
+
 Noah
 Charlotte
 ```
