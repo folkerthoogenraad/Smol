@@ -219,8 +219,12 @@ The scope of a lamda is not defined beforehand. The executer can decide the scop
 ```smol
 $ {"Hello" -> $variable} invoke -on $data
 ```
+
+So, if you invoke it on a `new` object it is equivalent to use either:
 ```smol
 $ {"Hello" -> $variable} invoke -on new
+
+$ ("Hello" -> $variable)
 ```
 
 ----------------------------------------------------------------------
