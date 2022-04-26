@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Smol.Values;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,59 +9,70 @@ namespace Smol.Modules
 {
     public static class Arrays
     {
-        public static void Initialize(Runtime runtime)
+        public static void Initialize(SmolContext context)
         {
-            runtime.RegisterCommand("each", (func, runtime) =>
+            context.RegisterCommand("map", (func, context) =>
             {
-                var lambda = runtime.Pop().AsLambda();
-                var array = runtime.Pop().AsArray();
+                var lambda = context.Pop().AsLambda();
+                var array = context.Pop().AsArray();
 
-                runtime.PushValue(array
-                    .Select(x => runtime.ExecuteScoped(lambda, x))
+                context.PushValue(array
+                    .Select(x => context.ExecuteScoped(lambda, x))
                     .Where(x => x != null)
                     .ToArray());
             });
 
-            runtime.RegisterCommand("filter", (func, runtime) => {
-                var lambda = runtime.Pop().AsLambda();
-                var array = runtime.Pop().AsArray();
+            context.RegisterCommand("each", (func, context) =>
+            {
+                var lambda = context.Pop().AsLambda();
+                var array = context.Pop().AsArray();
 
-                runtime.PushValue(array
-                    .Where(x => runtime.ExecuteScoped(lambda, x).AsBoolean())
+                foreach(var value in array)
+                {
+                    context.ExecuteScoped(lambda, value);
+                }
+            });
+
+            context.RegisterCommand("filter", (func, context) => {
+                var lambda = context.Pop().AsLambda();
+                var array = context.Pop().AsArray();
+
+                context.PushValue(array
+                    .Where(x => context.ExecuteScoped(lambda, x).AsBoolean())
                     .ToArray());
             });
 
-            runtime.RegisterCommand("reverse", (func, runtime) => {
-                var lambda = runtime.Pop().AsLambda();
-                var array = runtime.Pop().AsArray();
+            context.RegisterCommand("reverse", (func, context) => {
+                var lambda = context.Pop().AsLambda();
+                var array = context.Pop().AsArray();
 
-                runtime.PushValue(array
+                context.PushValue(array
                     .Reverse()
                     .ToArray());
             });
 
-            runtime.RegisterCommand("order", (func, runtime) => {
-                var lambda = runtime.Pop().AsLambda();
-                var array = runtime.Pop().AsArray();
+            context.RegisterCommand("order", (func, context) => {
+                var lambda = context.Pop().AsLambda();
+                var array = context.Pop().AsArray();
 
-                runtime.PushValue(array
-                    .OrderBy(x => runtime.ExecuteScoped(lambda, x).AsNumber())
+                context.PushValue(array
+                    .OrderBy(x => context.ExecuteScoped(lambda, x).AsNumber())
                     .ToArray());
             });
 
-            runtime.RegisterCommand("range", (func, runtime) => {
-                var array = runtime.Pop().AsArray();
+            context.RegisterCommand("range", (func, context) => {
+                var array = context.Pop().AsArray();
 
                 int from = 0;
                 int to = array.Length - 1;
 
                 if (func.HasParameter("from"))
                 {
-                    from = (int)func.GetNumber(runtime, "from");
+                    from = (int)func.GetNumber(context, "from");
                 }
                 if (func.HasParameter("to"))
                 {
-                    to = (int)func.GetNumber(runtime, "to");
+                    to = (int)func.GetNumber(context, "to");
                 }
 
                 if (to > array.Length)
@@ -82,19 +94,19 @@ namespace Smol.Modules
 
                 Array.Copy(array, from, newArray, 0, length);
 
-                runtime.PushValue(newArray);
+                context.PushValue(newArray);
             });
 
-            runtime.RegisterCommand("first", (func, runtime) => {
-                var array = runtime.Pop().AsArray();
+            context.RegisterCommand("first", (func, context) => {
+                var array = context.Pop().AsArray();
 
-                runtime.PushValue(array[0]);
+                context.PushValue(array[0]);
             });
             
-            runtime.RegisterCommand("second", (func, runtime) => {
-                var array = runtime.Pop().AsArray();
+            context.RegisterCommand("second", (func, context) => {
+                var array = context.Pop().AsArray();
 
-                runtime.PushValue(array[1]);
+                context.PushValue(array[1]);
             });
         }
     }

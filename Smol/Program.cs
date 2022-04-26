@@ -7,6 +7,7 @@ using Smol.Compiler;
 using System.Net;
 using System.Text.Json;
 using System.Globalization;
+using Smol.Values;
 
 namespace Smol
 {
@@ -51,18 +52,18 @@ namespace Smol
 
         public static void Main(string[] args)
         {
-            Runtime runtime = new Runtime();
+            SmolContext context = new SmolContext();
 
-            Modules.System.Initialize(runtime);
-            Modules.IO.Initialize(runtime);
-            Modules.Arrays.Initialize(runtime);
-            Modules.Maths.Initialize(runtime);
-            Modules.Strings.Initialize(runtime);
-            Modules.JSON.Initialize(runtime);
+            Modules.System.Initialize(context);
+            Modules.IO.Initialize(context);
+            Modules.Arrays.Initialize(context);
+            Modules.Maths.Initialize(context);
+            Modules.Strings.Initialize(context);
+            Modules.JSON.Initialize(context);
 
             SmolObject config = new SmolObject();
             config.Set(PRINT_STACK, new SmolBoolean(true));
-            runtime.SetVariable("_config", config);
+            context.SetVariable("_config", config);
 
 
             while (true)
@@ -97,7 +98,7 @@ namespace Smol
                             continue;
                         }
 
-                        runtime.Execute(command);
+                        context.Execute(command);
                     }
 
                     // TODO make sure you cannot lose config and shit
@@ -105,7 +106,7 @@ namespace Smol
                     if (config.Get(PRINT_STACK).AsBoolean())
                     {
                         int index = 0;
-                        foreach (var value in runtime.Stack)
+                        foreach (var value in context.Stack)
                         {
                             Console.WriteLine($"{index}: {value} ({value.Type})");
                             index++;
@@ -113,7 +114,7 @@ namespace Smol
                     }
 
                     // Maybe not?
-                    runtime.ClearStack();
+                    context.ClearStack();
                 }
                 catch(Exception e)
                 {

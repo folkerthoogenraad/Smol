@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Smol.Values;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,56 +9,56 @@ namespace Smol.Modules
 {
     public class Strings
     {
-        public static void Initialize(Runtime runtime)
+        public static void Initialize(SmolContext context)
         {
-            runtime.RegisterCommand("split", (func, runtime) => {
-                var value = runtime.Pop().AsString();
+            context.RegisterCommand("split", (func, context) => {
+                var value = context.Pop().AsString();
 
                 string on = "";
 
                 if (func.HasParameter("on"))
                 {
-                    on = func.GetString(runtime, "on");
+                    on = func.GetString(context, "on");
                 }
 
                 var splitted = value.Split(on);
 
-                runtime.PushValue(splitted.Select(x => new SmolString(x)).ToArray());
+                context.PushValue(splitted.Select(x => new SmolString(x)).ToArray());
             });
-            runtime.RegisterCommand("trim", (func, runtime) => {
-                var value = runtime.Pop().AsString();
+            context.RegisterCommand("trim", (func, context) => {
+                var value = context.Pop().AsString();
 
-                runtime.PushValue(value.Trim());
+                context.PushValue(value.Trim());
             });
-            runtime.RegisterCommand("equals", (func, runtime) => {
-                var valuea = runtime.Pop().AsString();
-                var valueb = runtime.Pop().AsString();
+            context.RegisterCommand("equals", (func, context) => {
+                var valuea = context.Pop().AsString();
+                var valueb = context.Pop().AsString();
 
-                runtime.PushValue(valuea == valueb);
+                context.PushValue(valuea == valueb);
             });
-            runtime.RegisterCommand("contains", (func, runtime) => {
-                var search = runtime.Pop().AsString();
-                var container = runtime.Pop().AsString();
+            context.RegisterCommand("contains", (func, context) => {
+                var search = context.Pop().AsString();
+                var container = context.Pop().AsString();
 
-                runtime.PushValue(container.Contains(search));
+                context.PushValue(container.Contains(search));
             });
-            runtime.RegisterCommand("append", (func, runtime) => {
-                var to = runtime.Pop().AsString();
-                var from = runtime.Pop().AsString();
+            context.RegisterCommand("append", (func, context) => {
+                var to = context.Pop().AsString();
+                var from = context.Pop().AsString();
 
-                runtime.PushValue(from + to);
+                context.PushValue(from + to);
             });
-            runtime.RegisterCommand("join", (func, runtime) => {
-                var array = runtime.Pop().AsArray();
+            context.RegisterCommand("join", (func, context) => {
+                var array = context.Pop().AsArray();
 
                 string with = string.Empty;
 
                 if (func.HasParameter("with"))
                 {
-                    with = func.GetString(runtime, "with");
+                    with = func.GetString(context, "with");
                 }
 
-                runtime.PushValue(string.Join(with, array.Select(x => x.ConvertString())));
+                context.PushValue(string.Join(with, array.Select(x => x.ConvertString())));
             });
         }
     }

@@ -8,34 +8,34 @@ namespace Smol.Modules
 {
     public class Maths
     {
-        public static void Initialize(Runtime runtime)
+        public static void Initialize(SmolContext context)
         {
             // ============================================= //
             // Basic math operations
             // ============================================= //
-            runtime.RegisterCommand("add", (func, runtime) => {
-                var num2 = runtime.Pop().AsNumber();
-                var num1 = runtime.Pop().AsNumber();
+            context.RegisterCommand("add", (func, context) => {
+                var num2 = context.Pop().AsNumber();
+                var num1 = context.Pop().AsNumber();
 
-                runtime.PushValue(num1 + num2);
+                context.PushValue(num1 + num2);
             });
-            runtime.RegisterCommand("sub", (func, runtime) => {
-                var num2 = runtime.Pop().AsNumber();
-                var num1 = runtime.Pop().AsNumber();
+            context.RegisterCommand("sub", (func, context) => {
+                var num2 = context.Pop().AsNumber();
+                var num1 = context.Pop().AsNumber();
 
-                runtime.PushValue(num1 - num2);
+                context.PushValue(num1 - num2);
             });
-            runtime.RegisterCommand("mul", (func, runtime) => {
-                var num2 = runtime.Pop().AsNumber();
-                var num1 = runtime.Pop().AsNumber();
+            context.RegisterCommand("mul", (func, context) => {
+                var num2 = context.Pop().AsNumber();
+                var num1 = context.Pop().AsNumber();
 
-                runtime.PushValue(num1 * num2);
+                context.PushValue(num1 * num2);
             });
-            runtime.RegisterCommand("div", (func, runtime) => {
-                var num2 = runtime.Pop().AsNumber();
-                var num1 = runtime.Pop().AsNumber();
+            context.RegisterCommand("div", (func, context) => {
+                var num2 = context.Pop().AsNumber();
+                var num1 = context.Pop().AsNumber();
 
-                runtime.PushValue(num1 / num2);
+                context.PushValue(num1 / num2);
             });
         }
     }

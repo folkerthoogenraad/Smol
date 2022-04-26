@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Smol.Expressions;
+using Smol.Values;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Smol
 {
-    public class Runtime
+    public class SmolContext
     {
-        public delegate void SmolProcessor(FunctionCallSmolExpression func, Runtime runtime);
+        public delegate void SmolProcessor(FunctionCallSmolExpression func, SmolContext context);
 
-        private Runtime? _parentRuntime;
+        private SmolContext? _parentContext;
         private Stack<SmolValue> _stack;
 
         private Dictionary<string, SmolProcessor> _actions;
@@ -19,9 +21,9 @@ namespace Smol
         public IEnumerable<SmolValue> Stack => _stack;
         public SmolObject This => _this;
 
-        public Runtime(Runtime? parentRuntime = null, SmolObject? _thisPointer = null)
+        public SmolContext(SmolContext? parentContext = null, SmolObject? _thisPointer = null)
         {
-            _parentRuntime = parentRuntime;
+            _parentContext = parentContext;
 
             _stack = new Stack<SmolValue>();
             _actions = new Dictionary<string, SmolProcessor>();
@@ -45,14 +47,14 @@ namespace Smol
         {
             if (_actions.ContainsKey(command)) return _actions[command];
 
-            return _parentRuntime?.FindProcessor(command);
+            return _parentContext?.FindProcessor(command);
         }
 
         public SmolValue? GetVariable(string name)
         {
             if (_this.Has(name)) return _this.Get(name);
 
-            return _parentRuntime?.GetVariable(name);
+            return _parentContext?.GetVariable(name);
         }
         public void SetVariable(string name, SmolValue value)
         {
@@ -111,7 +113,7 @@ namespace Smol
 
         public SmolValue? ExecuteScopedOn(SmolExpression command, SmolObject? @this, params SmolValue[] parameters)
         {
-            Runtime child = new Runtime(this, @this);
+            SmolContext child = new SmolContext(this, @this);
 
             // Setup the stack
             foreach(var value in parameters) child.PushValue(value);

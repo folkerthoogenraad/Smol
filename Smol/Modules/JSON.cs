@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Smol.Values;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -92,19 +93,23 @@ namespace Smol.Modules
             }
         }
 
-        public static void Initialize(Runtime runtime)
+        public static void Initialize(SmolContext context)
         {
-            runtime.RegisterCommand("json_parse", (func, runtime) => {
-                var value = runtime.Pop().AsString();
+            context.RegisterCommand("json_parse", (func, context) => {
+                var value = context.Pop().AsString();
 
                 var document = JsonDocument.Parse(value);
 
-                runtime.PushValue(JsonToSmol(document.RootElement));
+                context.PushValue(JsonToSmol(document.RootElement));
             });
-            runtime.RegisterCommand("json_serialize", (func, runtime) => {
-                var value = runtime.Pop().AsObject();
+            context.RegisterCommand("json_serialize", (func, context) => {
+                var value = context.Pop().AsObject();
 
-                runtime.PushValue(SmolToJSON(value).ToJsonString());
+                var options = new JsonSerializerOptions() { 
+                    WriteIndented = true,
+                };
+
+                context.PushValue(SmolToJSON(value).ToJsonString(options));
             });
         }
     }

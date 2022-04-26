@@ -5,47 +5,59 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Smol.Values;
 
 namespace Smol.Modules
 {
     public class IO
     {
-        public static void Initialize(Runtime runtime)
+        public static void Initialize(SmolContext context)
         {
-            runtime.RegisterCommand("files_list", (func, runtime) => {
+            context.RegisterCommand("files_list", (func, context) => {
                 var files = Directory.GetFiles(Directory.GetCurrentDirectory());
 
-                runtime.PushValue(files.Select(x => new SmolString(x)).ToArray());
+                context.PushValue(files.Select(x => new SmolString(x)).ToArray());
             });
-            runtime.RegisterCommand("directories_list", (func, runtime) =>
+            context.RegisterCommand("directories_list", (func, context) =>
             {
                 var files = Directory.GetDirectories(Directory.GetCurrentDirectory());
 
-                runtime.PushValue(files.Select(x => new SmolString(x)).ToArray());
+                context.PushValue(files.Select(x => new SmolString(x)).ToArray());
             });
 
-            
-            runtime.RegisterCommand("file_read", (func, runtime) => {
-                var value = runtime.Pop().AsString();
 
-                runtime.PushValue(File.ReadAllText(value));
+            context.RegisterCommand("file_name", (func, context) => {
+                var value = context.Pop().AsString();
+
+                context.PushValue(Path.GetFileName(value));
             });
-            runtime.RegisterCommand("file_write", (func, runtime) => {
-                var value = runtime.Pop().AsString();
-                var path = runtime.Pop().AsString();
+
+            context.RegisterCommand("file_read", (func, context) => {
+                var value = context.Pop().AsString();
+
+                context.PushValue(File.ReadAllText(value));
+            });
+            context.RegisterCommand("file_write", (func, context) => {
+                var value = context.Pop().AsString();
+                var path = context.Pop().AsString();
 
                 File.WriteAllText(path, value);
             });
+            context.RegisterCommand("file_delete", (func, context) => {
+                var path = context.Pop().AsString();
+
+                File.Delete(path);
+            });
 
 
-            runtime.RegisterCommand("http_get", (func, runtime) => {
-                var url = runtime.Pop().AsString();
+            context.RegisterCommand("http_get", (func, context) => {
+                var url = context.Pop().AsString();
 
                 using (var client = new WebClient())
                 {
                     var result = client.DownloadString(url);
 
-                    runtime.PushValue(result);
+                    context.PushValue(result);
                 }
             });
         }

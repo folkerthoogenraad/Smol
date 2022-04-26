@@ -1,14 +1,15 @@
-﻿using System;
+﻿using Smol.Values;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Smol
+namespace Smol.Expressions
 {
     public abstract class SmolExpression
     {
-        public abstract void Execute(Runtime runtime);
+        public abstract void Execute(SmolContext context);
     }
 
     public class ConstSmolExpression : SmolExpression
@@ -20,7 +21,7 @@ namespace Smol
             Value = value;
         }
 
-        public override void Execute(Runtime runtime)
+        public override void Execute(SmolContext runtime)
         {
             runtime.PushValue(Value);
         }
@@ -40,16 +41,16 @@ namespace Smol
             Expressions = expressions;
         }
 
-        public override void Execute(Runtime runtime)
+        public override void Execute(SmolContext context)
         {
-            Runtime r = new Runtime(runtime);
+            SmolContext r = new SmolContext(context);
 
             foreach (var expression in Expressions)
             {
                 expression.Execute(r);
             }
 
-            runtime.PushValue(r.Stack.Reverse().ToArray());
+            context.PushValue(r.Stack.Reverse().ToArray());
         }
 
         public override string ToString()
@@ -68,11 +69,11 @@ namespace Smol
             Name = name;
         }
 
-        public override void Execute(Runtime runtime)
+        public override void Execute(SmolContext context)
         {
-            var obj = runtime.Pop().AsObject();
+            var obj = context.Pop().AsObject();
 
-            runtime.PushValue(obj.Get(Name));
+            context.PushValue(obj.Get(Name));
         }
 
         public override string ToString()
@@ -90,16 +91,16 @@ namespace Smol
             Name = name;
         }
 
-        public override void Execute(Runtime runtime)
+        public override void Execute(SmolContext context)
         {
-            var value = runtime.GetVariable(Name);
+            var value = context.GetVariable(Name);
 
             if (value == null)
             {
                 throw new Exception($"Unknown variable ${Name}");
             }
 
-            runtime.PushValue(value);
+            context.PushValue(value);
         }
 
         public override string ToString()
@@ -116,11 +117,11 @@ namespace Smol
             LookupChain = lookupChain;
         }
 
-        public override void Execute(Runtime runtime)
+        public override void Execute(SmolContext context)
         {
-            var value = runtime.PopValue();
+            var value = context.PopValue();
 
-            var obj = runtime.This;
+            var obj = context.This;
 
             for (int i = 0; i < LookupChain.Length - 1; i++)
             {
@@ -155,11 +156,11 @@ namespace Smol
             Expressions = expressions;
         }
 
-        public override void Execute(Runtime runtime)
+        public override void Execute(SmolContext context)
         {
             foreach (var expression in Expressions)
             {
-                runtime.Execute(expression);
+                context.Execute(expression);
             }
         }
 
@@ -178,9 +179,9 @@ namespace Smol
             Expressions = expressions;
         }
 
-        public override void Execute(Runtime runtime)
+        public override void Execute(SmolContext context)
         {
-            Runtime r = new Runtime(runtime);
+            SmolContext r = new SmolContext(context);
             
             foreach (var expression in Expressions)
             {
@@ -191,7 +192,7 @@ namespace Smol
 
             if(r.StackHeight() == 1)
             {
-                runtime.PushValue(r.PopValue());
+                context.PushValue(r.PopValue());
             }
         }
 
@@ -217,25 +218,25 @@ namespace Smol
             return Parameters.ContainsKey(p);
         }
 
-        public string GetString(Runtime runtime, string name)
+        public string GetString(SmolContext context, string name)
         {
-            var value = GetValue(runtime, name);
+            var value = GetValue(context, name);
 
             if (value is SmolString str) return str.Data;
 
             throw new ApplicationException($"Cannot get value {name} as string.");
         }
 
-        public double GetNumber(Runtime runtime, string name)
+        public double GetNumber(SmolContext context, string name)
         {
-            var value = GetValue(runtime, name);
+            var value = GetValue(context, name);
 
             if (value is SmolNumber num) return num.Data;
 
             throw new ApplicationException($"Cannot get value {name} as number.");
         }
 
-        public SmolValue GetValue(Runtime existingRuntime, string name)
+        public SmolValue GetValue(SmolContext context, string name)
         {
             if (!Parameters.TryGetValue(name, out var command))
             {
@@ -243,23 +244,23 @@ namespace Smol
             }
 
             // Create a seperate runtime for this
-            Runtime runtime = new Runtime(existingRuntime, existingRuntime.This);
+            SmolContext runtime = new SmolContext(context, context.This);
 
             command.Execute(runtime);
 
             return runtime.PopValue();
         }
 
-        public override void Execute(Runtime runtime)
+        public override void Execute(SmolContext context)
         {
-            var processor = runtime.FindProcessor(Name);
+            var processor = context.FindProcessor(Name);
 
             if (processor == null)
             {
                 throw new Exception($"Unknown function with name \"{Name}\"!");
             }
 
-            processor.Invoke(this, runtime);
+            processor.Invoke(this, context);
         }
 
         public override string ToString()

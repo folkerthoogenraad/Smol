@@ -1,4 +1,5 @@
 ﻿using Smol.Compiler;
+using Smol.Values;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,53 +11,53 @@ namespace Smol.Modules
 {
     public static class System
     {
-        public static void Initialize(Runtime runtime)
+        public static void Initialize(SmolContext context)
         {
             // ======================================== //
             // Console printing etc (maybe not for system?)
             // ======================================== //
-            runtime.RegisterCommand("print", (func, runtime) => {
-                var value = runtime.PopValue();
+            context.RegisterCommand("print", (func, context) => {
+                var value = context.PopValue();
 
                 Console.WriteLine(value.ConvertString());
             });
-            runtime.RegisterCommand("prompt", (func, runtime) => {
+            context.RegisterCommand("prompt", (func, context) => {
                 if (func.HasParameter("text"))
                 {
-                    Console.WriteLine(func.GetString(runtime, "text"));
+                    Console.WriteLine(func.GetString(context, "text"));
                 }
 
-                runtime.PushValue(Console.ReadLine());
+                context.PushValue(Console.ReadLine());
             });
-            runtime.RegisterCommand("clear", (func, runtime) => {
+            context.RegisterCommand("clear", (func, context) => {
                 Console.Clear();
             });
             // Debugging
-            runtime.RegisterCommand("dump", (func, runtime) => {
+            context.RegisterCommand("dump", (func, context) => {
                 int index = 0;
-                foreach (var value in runtime.Stack)
+                foreach (var value in context.Stack)
                 {
                     Console.WriteLine($"{index}: {value} ({value.Type})");
                     index++;
                 }
             });
-            runtime.RegisterCommand("exit", (func, runtime) => {
+            context.RegisterCommand("exit", (func, context) => {
                 Environment.Exit(0);
             });
 
             // ======================================== //
             // Working directory and navigation
             // ======================================== //
-            runtime.RegisterCommand("workingdir", (func, runtime) => {
-                runtime.PushValue(Directory.GetCurrentDirectory());
+            context.RegisterCommand("workingdir", (func, context) => {
+                context.PushValue(Directory.GetCurrentDirectory());
             });
-            runtime.RegisterCommand("setworkingdir", (func, runtime) => {
-                var to = runtime.Pop().AsString();
+            context.RegisterCommand("setworkingdir", (func, context) => {
+                var to = context.Pop().AsString();
 
                 Directory.SetCurrentDirectory(to);
             });
-            runtime.RegisterCommand("cd", (func, runtime) => {
-                var to = runtime.Pop().AsString();
+            context.RegisterCommand("cd", (func, context) => {
+                var to = context.Pop().AsString();
 
                 Directory.SetCurrentDirectory(Directory.GetCurrentDirectory() + to);
             });
@@ -64,65 +65,65 @@ namespace Smol.Modules
             // ======================================== //
             // Stack manipulation
             // ======================================== //
-            runtime.RegisterCommand("dup", (func, runtime) => {
-                var value = runtime.PopValue();
+            context.RegisterCommand("dup", (func, context) => {
+                var value = context.PopValue();
 
-                runtime.PushValue(value);
-                runtime.PushValue(value);
+                context.PushValue(value);
+                context.PushValue(value);
             });
-            runtime.RegisterCommand("pop", (func, runtime) => {
-                var value = runtime.PopValue();
+            context.RegisterCommand("pop", (func, context) => {
+                var value = context.PopValue();
             });
-            runtime.RegisterCommand("clearvariables", (func, runtime) => {
-                runtime.ClearVariables();
+            context.RegisterCommand("clearvariables", (func, context) => {
+                context.ClearVariables();
             });
-            runtime.RegisterCommand("clearstack", (func, runtime) => {
-                runtime.ClearVariables();
+            context.RegisterCommand("clearstack", (func, context) => {
+                context.ClearVariables();
             });
-            runtime.RegisterCommand("this", (func, runtime) => {
-                runtime.PushValue(runtime.This);
+            context.RegisterCommand("this", (func, context) => {
+                context.PushValue(context.This);
             });
 
             // ======================================== //
             // Lambda stuff
             // ======================================== //
-            runtime.RegisterCommand("invoke", (func, runtime) => {
-                var lambda = runtime.Pop().AsLambda();
+            context.RegisterCommand("invoke", (func, context) => {
+                var lambda = context.Pop().AsLambda();
 
-                var @this = runtime.This;
+                var @this = context.This;
 
                 if (func.HasParameter("on"))
                 {
-                    @this = func.GetValue(runtime, "on").AsObject();
+                    @this = func.GetValue(context, "on").AsObject();
                 }
 
-                var result = runtime.ExecuteScopedOn(lambda, @this);
+                var result = context.ExecuteScopedOn(lambda, @this);
 
-                if (result != null) runtime.PushValue(result);
+                if (result != null) context.PushValue(result);
             });
 
             // ======================================== //
             // smol
             // ======================================== //
-            runtime.RegisterCommand("smol_parse", (func, runtime) => {
-                var input = runtime.Pop().AsString();
+            context.RegisterCommand("smol_parse", (func, context) => {
+                var input = context.Pop().AsString();
 
                 Lexer lexer = new Lexer(input);
                 Parser parser = new Parser(lexer.Lex());
 
-                runtime.PushValue(parser.ConvertToLambda(parser.Parse()));
+                context.PushValue(parser.ConvertToLambda(parser.Parse()));
             });
-            runtime.RegisterCommand("smol_serialize", (func, runtime) => {
-                var value = runtime.Pop();
+            context.RegisterCommand("smol_serialize", (func, context) => {
+                var value = context.Pop();
 
                 if (value.IsObject)
                 {
                     var obj = value.AsObject();
-                    runtime.PushValue(obj.ToFormattedString());
+                    context.PushValue(obj.ToFormattedString());
                 }
                 else
                 {
-                    runtime.PushValue(value.ToString());
+                    context.PushValue(value.ToString());
                 }
             });
 
@@ -130,28 +131,28 @@ namespace Smol.Modules
             // ======================================== //
             // Other system calls
             // ======================================== //
-            runtime.RegisterCommand("help", (func, runtime) => {
+            context.RegisterCommand("help", (func, context) => {
                 Console.WriteLine("Help will be provided later :)");
             });
 
-            runtime.RegisterCommand("to_string", (func, runtime) => {
-                var value = runtime.Pop();
+            context.RegisterCommand("to_string", (func, context) => {
+                var value = context.Pop();
 
-                runtime.PushValue(value.ConvertString());
+                context.PushValue(value.ConvertString());
             });
-            runtime.RegisterCommand("new", (func, runtime) => {
-                runtime.PushValue(new SmolObject());
+            context.RegisterCommand("new", (func, context) => {
+                context.PushValue(new SmolObject());
             });
 
-            runtime.RegisterCommand("parse_number", (func, runtime) => {
-                var value = runtime.Pop().AsString();
+            context.RegisterCommand("parse_number", (func, context) => {
+                var value = context.Pop().AsString();
 
-                runtime.PushValue(double.Parse(value, CultureInfo.InvariantCulture));
+                context.PushValue(double.Parse(value, CultureInfo.InvariantCulture));
             });
-            runtime.RegisterCommand("parse_boolean", (func, runtime) => {
-                var value = runtime.Pop().AsString();
+            context.RegisterCommand("parse_boolean", (func, context) => {
+                var value = context.Pop().AsString();
 
-                runtime.PushValue(bool.Parse(value));
+                context.PushValue(bool.Parse(value));
             });
         }
     }
