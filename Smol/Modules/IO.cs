@@ -48,6 +48,11 @@ namespace Smol.Modules
 
                 File.Delete(path);
             });
+            context.RegisterCommand("file_exists", (func, context) => {
+                var path = context.Pop().AsString();
+
+                context.PushValue(File.Exists(path));
+            });
 
 
             context.RegisterCommand("http_get", (func, context) => {

@@ -17,6 +17,8 @@ namespace Smol.Values
 
         Lambda,
 
+        Null,
+
         Native
     }
 }

@@ -30,7 +30,7 @@ namespace Smol.Modules
 
                 context.PushValue(value.Trim());
             });
-            context.RegisterCommand("equals", (func, context) => {
+            context.RegisterCommand("equals", (func, context) => { // This is not great for string only...
                 var valuea = context.Pop().AsString();
                 var valueb = context.Pop().AsString();
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Smol.Compiler
@@ -10,9 +11,15 @@ namespace Smol.Compiler
     {
         private Iterator<char> _characters;
 
+        private List<string> _errorMessages;
+
+        // TODO use some kind of messages struct where there is also a message type.
+        public IEnumerable<string> Messages => _errorMessages;
+
         public Lexer(string data)
         {
             _characters = new Iterator<char>(data.ToCharArray());
+            _errorMessages = new List<string>();
         }
 
         public IEnumerable<Token> Lex()
@@ -28,19 +35,25 @@ namespace Smol.Compiler
 
                     StringBuilder builder = new StringBuilder();
 
-                    while (_characters.HasCurrent && c != '"')
-                    {
-                        builder.Append(c);
+                    bool addNext = false;
 
+                    while (_characters.HasCurrent && (c != '"' || addNext))
+                    {
+                        addNext = false;
+                        if (c == '\\') addNext = true;
+                        
+                        builder.Append(c);
                         c = _characters.Next();
                     }
 
                     if (_characters.HasCurrent) _characters.Next();
 
+
+
                     yield return new Token()
                     {
                         Type = Token.TokenType.String,
-                        Data = builder.ToString().Replace("\\n", "\n")
+                        Data = Language.Unescape(builder.ToString())
                     };
                 }
                 else if (c == '-')
@@ -50,6 +63,8 @@ namespace Smol.Compiler
                     // Arrow
                     if (c == '>')
                     {
+                        c = _characters.Next();
+
                         yield return new Token()
                         {
                             Type = Token.TokenType.Store,
@@ -136,6 +151,26 @@ namespace Smol.Compiler
                         Data = ","
                     };
                 }
+                else if (c == '?')
+                {
+                    _characters.Next();
+
+                    yield return new Token()
+                    {
+                        Type = Token.TokenType.Question,
+                        Data = "?"
+                    };
+                }
+                else if (c == ';')
+                {
+                    _characters.Next();
+
+                    yield return new Token()
+                    {
+                        Type = Token.TokenType.LineEnd,
+                        Data = ";"
+                    };
+                }
                 else if (c == '(')
                 {
                     _characters.Next();
@@ -218,6 +253,14 @@ namespace Smol.Compiler
                             Data = builder.ToString()
                         };
                     }
+                    else if(data == "null")
+                    {
+                        yield return new Token()
+                        {
+                            Type = Token.TokenType.Null,
+                            Data = builder.ToString()
+                        };
+                    }
                     else
                     {
                         yield return new Token()
@@ -266,8 +309,13 @@ namespace Smol.Compiler
                         c = _characters.Next();
                     }
                 }
+                else if (IsWhiteSpace(c))
+                {
+                    _characters.Next();
+                }
                 else
                 {
+                    _errorMessages.Add($"Unexpected token: '{c}'. Ignoring.");
                     _characters.Next();
                 }
             }

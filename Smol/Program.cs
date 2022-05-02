@@ -79,16 +79,19 @@ namespace Smol
                 Console.ForegroundColor = ConsoleColor.Gray;
 
                 Lexer lexer = new Lexer(line);
-                Parser parser = new Parser(lexer.Lex());
+
+                var tokens = lexer.Lex().ToArray();
+
+                foreach (var message in lexer.Messages) Console.WriteLine(message);
+
+                Parser parser = new Parser(tokens);
                 
                 try
                 {
                     var parsed = parser.Parse().ToArray();
 
-                    foreach(var message in parser.Messages)
-                    {
-                        Console.WriteLine(message);
-                    }
+                    foreach(var message in parser.Messages) Console.WriteLine(message);
+                    
 
                     foreach (var command in parsed)
                     {

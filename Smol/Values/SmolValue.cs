@@ -19,6 +19,7 @@ namespace Smol.Values
         public bool IsLambda => Type == SmolType.Lambda;
         public bool IsBoolean => Type == SmolType.Boolean;
         public bool IsNative => Type == SmolType.Native;
+        public bool IsNull => Type == SmolType.Null;
 
         public string AsString()
         {

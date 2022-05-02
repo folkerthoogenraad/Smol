@@ -16,12 +16,13 @@ namespace Smol
         private Stack<SmolValue> _stack;
 
         private Dictionary<string, SmolProcessor> _actions;
-        private SmolObject _this;
+        private SmolValue _thisValue;
+        private SmolObject? _this;
 
         public IEnumerable<SmolValue> Stack => _stack;
         public SmolObject This => _this;
 
-        public SmolContext(SmolContext? parentContext = null, SmolObject? _thisPointer = null)
+        public SmolContext(SmolContext? parentContext = null, SmolValue? _thisPointer = null)
         {
             _parentContext = parentContext;
 
@@ -31,10 +32,12 @@ namespace Smol
             if(_thisPointer == null)
             {
                 _this = new SmolObject();
+                _thisValue = _this;
             }
             else
             {
-                _this = _thisPointer;
+                _thisValue = _thisPointer;
+                _this = _thisValue as SmolObject;
             }
         }
 
@@ -52,12 +55,15 @@ namespace Smol
 
         public SmolValue? GetVariable(string name)
         {
+            if (_this == null) throw new ApplicationException("Context this pointer cannot read variables.");
             if (_this.Has(name)) return _this.Get(name);
 
             return _parentContext?.GetVariable(name);
         }
         public void SetVariable(string name, SmolValue value)
         {
+            if (_this == null) throw new ApplicationException("Context this pointer cannot assign variables.");
+
             _this.Set(name, value);
         }
 
@@ -98,6 +104,8 @@ namespace Smol
         }
         public void ClearVariables()
         {
+            if (_this == null) return;
+
             _this.Clear();
         }
 
@@ -111,7 +119,7 @@ namespace Smol
             return ExecuteScopedOn(command, null, parameters);
         }
 
-        public SmolValue? ExecuteScopedOn(SmolExpression command, SmolObject? @this, params SmolValue[] parameters)
+        public SmolValue? ExecuteScopedOn(SmolExpression command, SmolValue? @this, params SmolValue[] parameters)
         {
             SmolContext child = new SmolContext(this, @this);
 
@@ -120,7 +128,7 @@ namespace Smol
 
             child.Execute(command);
 
-            if (child.StackHeight() > 1) throw new ApplicationException("Scoped execution cannot have more than one result.");
+            // if (child.StackHeight() > 1) throw new ApplicationException("Scoped execution cannot have more than one result.");
             if (child.StackHeight() == 0) return null;
 
             return child.Pop();
@@ -143,6 +151,8 @@ namespace Smol
 
             return builder.ToString();
         }
+
+
     }
 
 }

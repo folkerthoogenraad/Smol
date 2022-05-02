@@ -1,4 +1,5 @@
 ﻿using Smol.Compiler;
+using Smol.Expressions;
 using Smol.Values;
 using System;
 using System.Collections.Generic;
@@ -45,9 +46,45 @@ namespace Smol.Modules
                 Environment.Exit(0);
             });
 
+            context.RegisterCommand("value_type", (func, context) => {
+                var obj = context.PopValue();
+
+                context.PushValue(obj.Type.ToString());
+            });
+            context.RegisterCommand("is_null", (func, context) => { context.PushValue(context.PopValue().Type == SmolType.Null); });
+            context.RegisterCommand("is_string", (func, context) => { context.PushValue(context.PopValue().Type == SmolType.String); });
+            context.RegisterCommand("is_lambda", (func, context) => { context.PushValue(context.PopValue().Type == SmolType.Lambda); });
+            context.RegisterCommand("is_number", (func, context) => { context.PushValue(context.PopValue().Type == SmolType.Number); });
+            context.RegisterCommand("is_boolean", (func, context) => { context.PushValue(context.PopValue().Type == SmolType.Boolean); });
+            context.RegisterCommand("is_object", (func, context) => { context.PushValue(context.PopValue().Type == SmolType.Object); });
+
+            context.RegisterCommand("invert", (func, context) => { context.PushValue(!context.PopValue().AsBoolean()); });
+
+            context.RegisterCommand("object_keys", (func, context) => {
+                var obj = context.PopValue().AsObject();
+
+                context.PushValue(obj.Data.Keys.Select(x => new SmolString(x)).ToArray());
+            });
+
+            context.RegisterCommand("object_get", (func, context) => {
+                var key = context.PopValue().AsString();
+                var obj = context.PopValue().AsObject();
+
+                context.PushValue(obj.Get(key));
+            });
+
+            context.RegisterCommand("object_set", (func, context) => {
+                var key = context.PopValue().AsString();
+                var value = context.PopValue();
+                var obj = context.PopValue().AsObject();
+
+                obj.Set(key, value);
+            });
+
             // ======================================== //
             // Working directory and navigation
             // ======================================== //
+            // This probably shouldn't be in the system library but more like in the CLI library.
             context.RegisterCommand("workingdir", (func, context) => {
                 context.PushValue(Directory.GetCurrentDirectory());
             });
@@ -101,6 +138,11 @@ namespace Smol.Modules
 
                 if (result != null) context.PushValue(result);
             });
+            context.RegisterCommand("call", (func, context) => {
+                var lambda = context.Pop().AsLambda();
+
+                context.Execute(lambda);
+            });
 
             // ======================================== //
             // smol
@@ -112,6 +154,14 @@ namespace Smol.Modules
                 Parser parser = new Parser(lexer.Lex());
 
                 context.PushValue(parser.ConvertToLambda(parser.Parse()));
+            });
+
+            context.RegisterCommand("smol_lex", (func, context) => {
+                var input = context.Pop().AsString();
+
+                Lexer lexer = new Lexer(input);
+
+                context.PushValue(lexer.Lex().Select(token => new SmolString(token.Data)).ToArray());
             });
             context.RegisterCommand("smol_serialize", (func, context) => {
                 var value = context.Pop();
@@ -125,6 +175,21 @@ namespace Smol.Modules
                 {
                     context.PushValue(value.ToString());
                 }
+            });
+
+            context.RegisterCommand("smol_init", (func, context) => {
+                if (!File.Exists("init.smol"))
+                {
+                    Console.WriteLine("'init.smol' doesn't exist.");
+                    return;
+                }
+
+                var input = File.ReadAllText("init.smol");
+                
+                Lexer lexer = new Lexer(input);
+                Parser parser = new Parser(lexer.Lex());
+
+                context.Execute(new UnscopedBlockExpression(parser.Parse().ToArray()));
             });
 
 

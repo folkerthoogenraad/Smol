@@ -44,9 +44,13 @@ namespace Smol.Modules
             {
                 return new SmolArray(element.EnumerateArray().Select(x => JsonToSmol(x)).ToArray());
             }
+            else if (element.ValueKind == JsonValueKind.Null)
+            {
+                return new SmolNull();
+            }
             else
             {
-                throw new Exception("Cannot convert json to smol");
+                throw new Exception($"Cannot convert json to smol. Unconvertable value type: {element.ValueKind}");
             }
         }
 
@@ -87,9 +91,13 @@ namespace Smol.Modules
 
                 return array;
             }
+            else if (value.IsNull)
+            {
+                return JsonValue.Create<string?>(null);
+            }
             else
             {
-                throw new Exception("Cannot convert smol to json");
+                throw new Exception($"Cannot convert smol to json. Unconvertable value type: {value.Type}");
             }
         }
 

@@ -16,10 +16,13 @@ namespace Smol.Compiler
             Number,
             String,
             Boolean,
+            Null,
 
             Param,
 
             Seperator,
+
+            Question,
 
             BracketOpen,
             BracketClose,
@@ -29,6 +32,8 @@ namespace Smol.Compiler
 
             CurlyOpen,
             CurlyClose,
+
+            LineEnd,
 
             Lookup,
 

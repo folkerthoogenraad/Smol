@@ -15,6 +15,7 @@ namespace Smol.Compiler
 
         private List<string> _messages;
 
+        // TODO use some kind of messages struct where there is also a message type.
         public IEnumerable<string> Messages => _messages;
 
         public Parser(IEnumerable<Token> tokens)
@@ -93,6 +94,11 @@ namespace Smol.Compiler
                 _tokens.Next();
                 return new ConstSmolExpression(new SmolBoolean(bool.Parse(current.Data)));
             }
+            else if (current.Type == Token.TokenType.Null)
+            {
+                _tokens.Next();
+                return new ConstSmolExpression(new SmolNull());
+            }
             else if (current.Type == Token.TokenType.BracketOpen)
             {
                 // Consume (
@@ -161,13 +167,37 @@ namespace Smol.Compiler
             }
             else if (current.Type == Token.TokenType.Lookup)
             {
+                var data = new LookupSmolExpression(current.Data);
+
+                current = _tokens.Next();
+
+                if (current.Type == Token.TokenType.Question)
+                {
+                    _tokens.Next();
+                    return new ExistsSmolExpression(data);
+                }
+
+                return data;
+            }
+            else if (current.Type == Token.TokenType.LineEnd)
+            {
                 _tokens.Next();
-                return new LookupSmolExpression(current.Data);
+
+                return new DumpStackExpression();
             }
             else if (current.Type == Token.TokenType.Variable)
             {
-                _tokens.Next();
-                return new VariableSmolExpression(current.Data);
+                var data = new VariableSmolExpression(current.Data);
+
+                current = _tokens.Next();
+
+                if (current.Type == Token.TokenType.Question)
+                {
+                    _tokens.Next();
+                    return new ExistsSmolExpression(data);
+                }
+
+                return data;
             }
             else if (current.Type == Token.TokenType.Store)
             {
