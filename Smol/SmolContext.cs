@@ -22,6 +22,8 @@ namespace Smol
         public IEnumerable<SmolValue> Stack => _stack;
         public SmolObject This => _this;
 
+        public SmolContext? ParentContext => _parentContext;
+
         public SmolContext(SmolContext? parentContext = null, SmolValue? _thisPointer = null)
         {
             _parentContext = parentContext;
@@ -71,6 +73,10 @@ namespace Smol
         {
             return _stack.Pop();
         }
+        public SmolValue PeekValue()
+        {
+            return _stack.Peek();
+        }
 
         public void PushValue(string value)
         {
@@ -91,6 +97,14 @@ namespace Smol
         public void PushValue(SmolValue[] value)
         {
             _stack.Push(new SmolArray(value));
+        }
+
+        public void PushStack(IEnumerable<SmolValue> stack)
+        {
+            foreach(var item in stack)
+            {
+                _stack.Push(item);
+            }
         }
 
         public int StackHeight()

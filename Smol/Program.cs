@@ -17,37 +17,108 @@ namespace Smol
 
         public static string ReadHighlightedString()
         {
-            /*int index = Console.CursorLeft;
-
             StringBuilder sb = new StringBuilder();
+
+            int left = Console.CursorLeft;
+            int top = Console.CursorTop;
+
+            int index = 0;
 
             while (true)
             {
                 var info = Console.ReadKey(true);
 
-                if(info.Key == ConsoleKey.Enter)
+                if (info.Key == ConsoleKey.Enter)
                 {
+                    Console.Write("\n");
                     return sb.ToString();
                 }
-                else if(info.Key == ConsoleKey.Backspace && sb.Length > 0)
+                else if (info.Key == ConsoleKey.Backspace && index > 0)
                 {
-                    sb.Remove(sb.Length - 1, 1);
-
-                    Console.CursorVisible = false;
-                    Console.SetCursorPosition(Console.CursorLeft - 2, Console.CursorTop);
-                    Console.Write(" ");
-                    Console.SetCursorPosition(Console.CursorLeft - 2, Console.CursorTop);
-                    Console.CursorVisible = true;
+                    sb.Remove(index - 1, 1);
+                    index--;
                 }
-                else
+                else if (info.Key == ConsoleKey.Delete && index < sb.Length)
                 {
-                    sb.Append(info.KeyChar);
-                    Console.Write(info.KeyChar);
+                    sb.Remove(index, 1);
+                }
+                else if (info.Key == ConsoleKey.LeftArrow)
+                {
+                    index--;
+                }
+                else if (info.Key == ConsoleKey.RightArrow)
+                {
+                    index++;
+                }
+                else if (IsLegalChar(info.KeyChar))
+                {
+                    sb.Insert(index, info.KeyChar);
+                    index++;
                 }
 
-            }*/
+                if(index < 0) { index = 0; }
+                if (index > sb.Length) index = sb.Length;
 
-            return Console.ReadLine();
+                Console.CursorVisible = false;
+                Console.SetCursorPosition(left, top);
+
+                Lexer lexer = new Lexer(sb.ToString());
+
+                var tokens = lexer.Lex().ToArray();
+
+                foreach (var token in tokens)
+                {
+                    switch (token.Type)
+                    {
+                        case Token.TokenType.String:
+                            Console.ForegroundColor = ConsoleColor.Blue;
+                            break;
+                        case Token.TokenType.At:
+                            Console.ForegroundColor = ConsoleColor.Cyan;
+                            break;
+                        case Token.TokenType.Unknown:
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            break;
+                        case Token.TokenType.Variable:
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            break;
+                        case Token.TokenType.Param:
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            break;
+                        default:
+                            Console.ForegroundColor = ConsoleColor.White;
+                            break;
+                    }
+                    Console.Write(token.Data);
+                }
+
+                Console.SetCursorPosition(left + index, top);
+                Console.CursorVisible = true;
+            }
+        }
+
+        public static bool IsLegalChar(char c)
+        {
+            return (c >= 'a' && c <= 'z')
+               || (c >= 'A' && c <= 'Z')
+               || (c >= '0' && c <= '9')
+               || (c == ' ')
+               || (c == '(')
+               || (c == ')')
+               || (c == '{')
+               || (c == '}')
+               || (c == ':')
+               || (c == '/')
+               || (c == '[')
+               || (c == ']')
+               || (c == '@')
+               || (c == '?')
+               || (c == '"')
+               || (c == '.')
+               || (c == '-')
+               || (c == '>')
+               || (c == '$')
+               || (c == '_');
         }
 
         public static void Main(string[] args)

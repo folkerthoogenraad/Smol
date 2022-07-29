@@ -29,7 +29,7 @@ namespace Smol.Modules
 
                 foreach(var value in array)
                 {
-                    context.ExecuteScopedOn(lambda, value);
+                    context.ExecuteScoped(lambda, value);
                 }
             });
 

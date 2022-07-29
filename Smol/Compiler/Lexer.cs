@@ -31,11 +31,9 @@ namespace Smol.Compiler
                 // strings
                 if (c == '"')
                 {
-                    c = _characters.Next();
-
                     StringBuilder builder = new StringBuilder();
 
-                    bool addNext = false;
+                    bool addNext = true;
 
                     while (_characters.HasCurrent && (c != '"' || addNext))
                     {
@@ -46,6 +44,8 @@ namespace Smol.Compiler
                         c = _characters.Next();
                     }
 
+                    builder.Append(c);
+
                     if (_characters.HasCurrent) _characters.Next();
 
 
@@ -53,7 +53,7 @@ namespace Smol.Compiler
                     yield return new Token()
                     {
                         Type = Token.TokenType.String,
-                        Data = Language.Unescape(builder.ToString())
+                        Data = builder.ToString(),
                     };
                 }
                 else if (c == '-')
@@ -77,6 +77,8 @@ namespace Smol.Compiler
                     {
                         StringBuilder builder = new StringBuilder();
 
+                        builder.Append("-"); // Consumed character
+
                         while (_characters.HasCurrent && IsContinueCharacter(c))
                         {
                             builder.Append(c);
@@ -99,6 +101,8 @@ namespace Smol.Compiler
 
                     StringBuilder builder = new StringBuilder();
 
+                    builder.Append(".");
+
                     while (_characters.HasCurrent && IsContinueCharacter(c))
                     {
                         builder.Append(c);
@@ -117,6 +121,8 @@ namespace Smol.Compiler
                     c = _characters.Next();
 
                     StringBuilder builder = new StringBuilder();
+
+                    builder.Append("$");
 
                     while (_characters.HasCurrent && IsContinueCharacter(c))
                     {
@@ -149,6 +155,16 @@ namespace Smol.Compiler
                     {
                         Type = Token.TokenType.Seperator,
                         Data = ","
+                    };
+                }
+                else if (c == '@')
+                {
+                    _characters.Next();
+
+                    yield return new Token()
+                    {
+                        Type = Token.TokenType.At,
+                        Data = "@"
                     };
                 }
                 else if (c == '?')
@@ -304,18 +320,48 @@ namespace Smol.Compiler
                 // Comments!
                 else if (c == '#')
                 {
+                    StringBuilder builder = new StringBuilder();
+
                     while (_characters.HasCurrent && c != '\n')
                     {
+                        builder.Append(c);
+
                         c = _characters.Next();
                     }
+
+                    yield return new Token()
+                    {
+                        Type = Token.TokenType.Comment,
+                        Data = builder.ToString()
+                    };
                 }
                 else if (IsWhiteSpace(c))
                 {
-                    _characters.Next();
+                    StringBuilder builder = new StringBuilder();
+
+                    while (_characters.HasCurrent && IsWhiteSpace(c))
+                    {
+                        builder.Append(c);
+
+                        c = _characters.Next();
+                    }
+
+                    yield return new Token()
+                    {
+                        Type = Token.TokenType.WhiteSpace,
+                        Data = builder.ToString()
+                    };
                 }
                 else
                 {
                     _errorMessages.Add($"Unexpected token: '{c}'. Ignoring.");
+
+                    yield return new Token()
+                    {
+                        Type = Token.TokenType.Unknown,
+                        Data = "" + c
+                    };
+
                     _characters.Next();
                 }
             }

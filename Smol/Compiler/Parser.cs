@@ -20,7 +20,13 @@ namespace Smol.Compiler
 
         public Parser(IEnumerable<Token> tokens)
         {
-            _tokens = new Iterator<Token>(tokens);
+            // Ignore unkown, comments and whitespaces
+            _tokens = new Iterator<Token>(tokens
+                .Where(token => token.Type != Token.TokenType.Unknown
+                    && token.Type != Token.TokenType.Comment
+                    && token.Type != Token.TokenType.WhiteSpace)
+                );
+
             _messages = new List<string>();
         }
 
@@ -67,7 +73,7 @@ namespace Smol.Compiler
 
                 while (param != null && param.Type == Token.TokenType.Param)
                 {
-                    var name = param.Data;
+                    var name = param.Data.Substring(1);
 
                     _tokens.Next();
 
@@ -87,7 +93,11 @@ namespace Smol.Compiler
             else if (current.Type == Token.TokenType.String)
             {
                 _tokens.Next();
-                return new ConstSmolExpression(new SmolString(current.Data));
+
+                var data = current.Data;
+                var actual = Language.Unescape(data.Substring(1, data.Length - 2));
+
+                return new ConstSmolExpression(new SmolString(actual));
             }
             else if (current.Type == Token.TokenType.Boolean)
             {
@@ -187,7 +197,8 @@ namespace Smol.Compiler
             }
             else if (current.Type == Token.TokenType.Variable)
             {
-                var data = new VariableSmolExpression(current.Data);
+                var name = current.Data.Substring(1);
+                var data = new VariableSmolExpression(name);
 
                 current = _tokens.Next();
 
@@ -212,17 +223,22 @@ namespace Smol.Compiler
 
                 var lookupChain = new List<string>();
 
-                lookupChain.Add(variable.Data);
+                lookupChain.Add(variable.Data.Substring(1));
 
                 var token = _tokens.Next();
 
                 while(_tokens.HasCurrent && token.Type == Token.TokenType.Lookup)
                 {
-                    lookupChain.Add(token.Data);
+                    lookupChain.Add(token.Data.Substring(1));
                     token = _tokens.Next();
                 }
 
                 return new StoreSmolExpression(lookupChain.ToArray());
+            }
+            else if(current.Type == Token.TokenType.At)
+            {
+                _tokens.Next();
+                return new ParentStackExpression();
             }
             else
             {

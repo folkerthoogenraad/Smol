@@ -20,6 +20,8 @@ namespace Smol.Compiler
 
             Param,
 
+            At,
+
             Seperator,
 
             Question,
@@ -39,6 +41,11 @@ namespace Smol.Compiler
 
             Variable,
             Store,
+
+            // Others
+            Comment,
+            WhiteSpace,
+            Unknown,
 
             EndOfFile
         }
