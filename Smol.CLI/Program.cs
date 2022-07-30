@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Globalization;
 using Smol.Values;
 
-namespace Smol
+namespace Smol.Runtime
 {
     public class Program
     {
@@ -56,7 +56,7 @@ namespace Smol
                     index++;
                 }
 
-                if(index < 0) { index = 0; }
+                if (index < 0) { index = 0; }
                 if (index > sb.Length) index = sb.Length;
 
                 Console.CursorVisible = false;
@@ -91,6 +91,7 @@ namespace Smol
                     }
                     Console.Write(token.Data);
                 }
+                Console.Write(" ");
 
                 Console.SetCursorPosition(left + index, top);
                 Console.CursorVisible = true;
@@ -123,19 +124,11 @@ namespace Smol
 
         public static void Main(string[] args)
         {
-            SmolContext context = new SmolContext();
-
-            Modules.System.Initialize(context);
-            Modules.IO.Initialize(context);
-            Modules.Arrays.Initialize(context);
-            Modules.Maths.Initialize(context);
-            Modules.Strings.Initialize(context);
-            Modules.JSON.Initialize(context);
+            SmolRuntime runtime = new SmolRuntime();
 
             SmolObject config = new SmolObject();
             config.Set(PRINT_STACK, new SmolBoolean(true));
-            context.SetVariable("_config", config);
-
+            runtime.Context.SetVariable("_config", config);
 
             while (true)
             {
@@ -143,7 +136,6 @@ namespace Smol
                 Console.Write(Directory.GetCurrentDirectory());
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write(" $ ");
-                Console.ForegroundColor = ConsoleColor.Blue;
 
                 string line = ReadHighlightedString();
 
@@ -156,23 +148,23 @@ namespace Smol
                 foreach (var message in lexer.Messages) Console.WriteLine(message);
 
                 Parser parser = new Parser(tokens);
-                
+
                 try
                 {
                     var parsed = parser.Parse().ToArray();
 
-                    foreach(var message in parser.Messages) Console.WriteLine(message);
-                    
+                    foreach (var message in parser.Messages) Console.WriteLine(message);
+
 
                     foreach (var command in parsed)
                     {
-                        if(command == null)
+                        if (command == null)
                         {
                             Console.WriteLine("null command");
                             continue;
                         }
 
-                        context.Execute(command);
+                        runtime.Context.Execute(command);
                     }
 
                     // TODO make sure you cannot lose config and shit
@@ -180,7 +172,7 @@ namespace Smol
                     if (config.Get(PRINT_STACK).AsBoolean())
                     {
                         int index = 0;
-                        foreach (var value in context.Stack)
+                        foreach (var value in runtime.Context.Stack)
                         {
                             Console.WriteLine($"{index}: {value} ({value.Type})");
                             index++;
@@ -188,13 +180,13 @@ namespace Smol
                     }
 
                     // Maybe not?
-                    context.ClearStack();
+                    runtime.Context.ClearStack();
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                 }
-                
+
             }
         }
     }

@@ -392,6 +392,19 @@ namespace Smol.Compiler
         {
             return (c >= '0' && c <= '9');
         }
+
+        public static Token[] Lex(string input)
+        {
+            Lexer lexer = new Lexer(input);
+            Token[] tokens = lexer.Lex().ToArray();
+
+            if(lexer.Messages.Count() > 0)
+            {
+                throw new SmolLexException(lexer.Messages.ToArray());
+            }
+
+            return tokens;
+        }
     }
 
 }

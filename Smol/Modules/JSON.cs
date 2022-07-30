@@ -111,7 +111,7 @@ namespace Smol.Modules
                 context.PushValue(JsonToSmol(document.RootElement));
             });
             context.RegisterCommand("json_serialize", (func, context) => {
-                var value = context.Pop().AsObject();
+                var value = context.Pop();
 
                 var options = new JsonSerializerOptions() { 
                     WriteIndented = true,

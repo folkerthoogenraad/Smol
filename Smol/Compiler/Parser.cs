@@ -177,7 +177,7 @@ namespace Smol.Compiler
             }
             else if (current.Type == Token.TokenType.Lookup)
             {
-                var data = new LookupSmolExpression(current.Data);
+                var data = new LookupSmolExpression(current.Data.Substring(1));
 
                 current = _tokens.Next();
 
@@ -248,6 +248,20 @@ namespace Smol.Compiler
 
                 return ParseExpression();
             }
+        }
+
+
+        public static SmolExpression[] Parse(Token[] tokens)
+        {
+            Parser parser = new Parser(tokens);
+            var parsed = parser.Parse().ToArray();
+
+            if (parser.Messages.Count() > 0)
+            {
+                throw new SmolParseException(parser.Messages.ToArray());
+            }
+
+            return parsed;
         }
     }
 

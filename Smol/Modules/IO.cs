@@ -58,11 +58,21 @@ namespace Smol.Modules
             context.RegisterCommand("http_get", (func, context) => {
                 var url = context.Pop().AsString();
 
-                using (var client = new WebClient())
+                using (var client = new HttpClient())
                 {
-                    var result = client.DownloadString(url);
+                    string responseBody = "";
 
-                    context.PushValue(result);
+                    var lambda = async () =>
+                    {
+                        var response = await client.GetAsync(url);
+                        response.EnsureSuccessStatusCode();
+                        responseBody = await response.Content.ReadAsStringAsync();
+                    };
+
+                    var task = lambda();
+                    task.Wait();
+
+                    context.PushValue(responseBody);
                 }
             });
         }

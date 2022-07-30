@@ -42,6 +42,10 @@ namespace Smol
                 _this = _thisValue as SmolObject;
             }
         }
+        public void UnregisterCommand(string command)
+        {
+            _actions.Remove(command);
+        }
 
         public void RegisterCommand(string command, SmolProcessor action)
         {
@@ -151,6 +155,10 @@ namespace Smol
         public void Execute(SmolExpression command)
         {
             command.Execute(this);
+        }
+        public void Execute(SmolExpression[] commands)
+        {
+            foreach (var command in commands) Execute(command);
         }
 
         public override string ToString()
